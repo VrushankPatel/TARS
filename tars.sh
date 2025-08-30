@@ -29,7 +29,8 @@ USAGE:
 
 AVAILABLE COMMANDS:
     start       Start one or more applications
-    stop        Stop one or more applications [Coming soon]
+    stop        Stop one or more applications
+    restart     Restart one or more applications (stop followed by start)
     --help      Display this help message
 
 Get help for specific commands:
@@ -74,6 +75,42 @@ DIRECTORY STRUCTURE:
 NOTE:
     - Each application must have a docker-compose.yml file in its directory
     - All applications are managed using Docker Compose
+EOF
+}
+
+# Function to print restart help
+print_restart_help() {
+    print_banner
+    cat << "EOF"
+
+RESTART COMMAND
+--------------
+Restart one or more TARS applications.
+
+USAGE:
+    ./tars.sh restart <app_name | all | --help>
+
+OPTIONS:
+    app_name    Name of the application to restart (must exist in apps directory)
+    all         Restart all available applications
+    --help      Display this help message
+
+EXAMPLES:
+    ./tars.sh restart immich     Restart the immich application
+    ./tars.sh restart all        Restart all applications
+
+DIRECTORY STRUCTURE:
+    The script expects applications to be organized as follows:
+    apps/
+    ├── app1/
+    │   └── docker-compose.yml
+    ├── app2/
+    │   └── docker-compose.yml
+    └── ...
+
+NOTE:
+    - Each application must have a docker-compose.yml file in its directory
+    - Applications are restarted using 'docker compose down' followed by 'up -d'
 EOF
 }
 
@@ -136,9 +173,15 @@ case "$COMMAND" in
             exit 0
         fi
         ;;
+    "restart")
+        if [ $# -eq 0 ] || [ "$1" == "--help" ]; then
+            print_restart_help
+            exit 0
+        fi
+        ;;
     *)
         echo "Error: Invalid command '$COMMAND'"
-        echo "Valid commands are: start, stop"
+        echo "Valid commands are: start, stop, restart"
         echo "Use --help to see usage information"
         exit 1
         ;;
@@ -203,11 +246,20 @@ execute_docker_compose() {
     
     if [ -f "$compose_file" ]; then
         echo "Managing $app application..."
-        if [ "$cmd" == "start" ]; then
-            docker compose -f "$compose_file" up -d
-        elif [ "$cmd" == "stop" ]; then
-            docker compose -f "$compose_file" down
-        fi
+        case "$cmd" in
+            "start")
+                docker compose -f "$compose_file" up -d
+                ;;
+            "stop")
+                docker compose -f "$compose_file" down
+                ;;
+            "restart")
+                echo "Stopping $app..."
+                docker compose -f "$compose_file" down
+                echo "Starting $app..."
+                docker compose -f "$compose_file" up -d
+                ;;
+        esac
     else
         echo "Error: docker-compose.yml not found for $app at $compose_file"
         exit 1
