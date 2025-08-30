@@ -68,12 +68,18 @@ fi
 # Function to execute single app script
 execute_app_script() {
     local app=$1
-    local script_path="apps/${app}/start-${app}.sh"
+    local base_path
+    if [ -n "$SUDO_USER" ]; then
+        base_path="/home/$SUDO_USER/TARS"
+    else
+        base_path="$PWD"
+    fi
+    local script_path="$base_path/apps/${app}/start-${app}.sh"
     
     if [ -f "$script_path" ]; then
         echo "Executing $script_path"
         chmod +x "$script_path"
-        "$script_path"
+        cd "$(dirname "$script_path")" && ./$(basename "$script_path")
     else
         echo "Error: Script not found at $script_path"
         exit 1
