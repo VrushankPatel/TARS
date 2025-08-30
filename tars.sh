@@ -153,11 +153,53 @@ if [ ! -d "$BASE_DIR/apps" ]; then
     exit 1
 fi
 
+# Function to ensure required directories exist
+ensure_directories() {
+    local app=$1
+    local created_new=false
+    
+    # Check if base data directory exists
+    if [ ! -d "/opt/tars-data" ]; then
+        echo "Creating base data directory at /opt/tars-data"
+        sudo mkdir -p /opt/tars-data
+        sudo chown $USER:$USER /opt/tars-data
+        created_new=true
+    fi
+    
+    # Create app-specific directories based on .env file
+    if [ -f "$BASE_DIR/apps/$app/.env" ]; then
+        # Extract all paths from .env that end in _LOCATION
+        local paths=$(grep "_LOCATION=" "$BASE_DIR/apps/$app/.env" | cut -d= -f2)
+        
+        for path in $paths; do
+            if [[ $path == /* ]]; then  # Only process absolute paths
+                if [ ! -d "$path" ]; then
+                    echo "Creating new directory: $path"
+                    sudo mkdir -p "$path"
+                    sudo chown $USER:$USER "$path"
+                    created_new=true
+                else
+                    echo "Using existing directory: $path"
+                fi
+            fi
+        done
+    fi
+    
+    if [ "$created_new" = true ]; then
+        echo "Note: New directories were created. Existing directories were left untouched."
+    else
+        echo "All required directories already exist."
+    fi
+}
+
 # Function to execute docker compose command
 execute_docker_compose() {
     local app=$1
     local cmd=$2
     local compose_file="$BASE_DIR/apps/${app}/docker-compose.yml"
+    
+    # Ensure required directories exist before starting
+    ensure_directories "$app"
     
     if [ -f "$compose_file" ]; then
         echo "Managing $app application..."

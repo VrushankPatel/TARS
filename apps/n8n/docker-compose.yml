@@ -17,7 +17,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - traefik_data:/letsencrypt
+      - ${TRAEFIK_DATA_LOCATION}:/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
   n8n:
@@ -51,9 +51,7 @@ services:
       - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
       - TZ=${GENERIC_TIMEZONE}
     volumes:
-      - n8n_data:/home/node/.n8n
-      - ./local-files:/files
+      - ${N8N_DATA_LOCATION}:/home/node/.n8n
+      - ${LOCAL_FILES_LOCATION}:/files
 
-volumes:
-  n8n_data:
-  traefik_data:
+# No volumes needed as we're using directory mounts
