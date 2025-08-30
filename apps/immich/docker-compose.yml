@@ -50,6 +50,8 @@ services:
   redis:
     container_name: immich_redis
     image: docker.io/valkey/valkey:8-bookworm@sha256:a137a2b60aca1a75130022d6bb96af423fefae4eb55faf395732db3544803280
+    volumes:
+      - ${REDIS_DATA_LOCATION}:/data
     healthcheck:
       test: redis-cli ping || exit 1
     restart: always

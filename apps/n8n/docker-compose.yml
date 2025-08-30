@@ -23,6 +23,11 @@ services:
   n8n:
     image: docker.n8n.io/n8nio/n8n
     restart: always
+    volumes:
+      - ${N8N_DATA_LOCATION}:/home/node/.n8n
+      - ${LOCAL_FILES_LOCATION}:/files
+    # Prevent creation of anonymous volumes
+    volumes_from: []
     ports:
       - "127.0.0.1:5678:5678"
     labels:
@@ -50,8 +55,5 @@ services:
       - WEBHOOK_URL=https://${SUBDOMAIN}.${DOMAIN_NAME}/
       - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
       - TZ=${GENERIC_TIMEZONE}
-    volumes:
-      - ${N8N_DATA_LOCATION}:/home/node/.n8n
-      - ${LOCAL_FILES_LOCATION}:/files
 
 # No volumes needed as we're using directory mounts
