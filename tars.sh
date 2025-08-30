@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Get the absolute path of the script's directory
+BASE_DIR="$(dirname "$(readlink -f "$0")")"
+
 print_banner() {
     cat << "EOF"
   ______  ___      ____   _____ 
@@ -74,40 +77,79 @@ NOTE:
 EOF
 }
 
-# Handle help text based on arguments
+# Function to print stop help
+print_stop_help() {
+    print_banner
+    cat << "EOF"
+
+STOP COMMAND
+-----------
+Stop one or more TARS applications.
+
+USAGE:
+    ./tars.sh stop <app_name | all | --help>
+
+OPTIONS:
+    app_name    Name of the application to stop (must exist in apps directory)
+    all         Stop all available applications
+    --help      Display this help message
+
+EXAMPLES:
+    ./tars.sh stop immich     Stop the immich application
+    ./tars.sh stop all        Stop all applications
+
+DIRECTORY STRUCTURE:
+    The script expects applications to be organized as follows:
+    apps/
+    ├── app1/
+    │   └── docker-compose.yml
+    ├── app2/
+    │   └── docker-compose.yml
+    └── ...
+
+NOTE:
+    - Each application must have a docker-compose.yml file in its directory
+    - Applications are stopped using 'docker compose down'
+EOF
+}
+
+# Handle help text and command validation
 if [ $# -eq 0 ] || [ "$1" == "--help" ]; then
     print_main_help
     exit 0
 fi
 
-if [ $# -eq 1 ]; then
-    if [ "$1" == "start" ]; then
-        print_start_help
-        exit 0
-    elif [ "$1" == "stop" ]; then
-        echo "Stop command functionality coming soon!"
-        exit 0
-    else
-        print_main_help
-        exit 1
-    fi
-fi
-
-# Store the command and app name
 COMMAND=$1
-APP_NAME=$2
+shift
 
-# Check if command is valid
-if [ "$COMMAND" != "start" ] && [ "$COMMAND" != "stop" ]; then
-    echo "Error: Invalid command '$COMMAND'"
-    echo "Valid commands are: start, stop"
-    echo "Use --help to see usage information"
-    exit 1
-fi
+# Handle command-specific help and validation
+case "$COMMAND" in
+    "start")
+        if [ $# -eq 0 ] || [ "$1" == "--help" ]; then
+            print_start_help
+            exit 0
+        fi
+        ;;
+    "stop")
+        if [ $# -eq 0 ] || [ "$1" == "--help" ]; then
+            print_stop_help
+            exit 0
+        fi
+        ;;
+    *)
+        echo "Error: Invalid command '$COMMAND'"
+        echo "Valid commands are: start, stop"
+        echo "Use --help to see usage information"
+        exit 1
+        ;;
+esac
+
+# Store the app name
+APP_NAME=$1
 
 # Check if apps directory exists
-if [ ! -d "apps" ]; then
-    echo "Error: 'apps' directory not found"
+if [ ! -d "$BASE_DIR/apps" ]; then
+    echo "Error: 'apps' directory not found in $BASE_DIR"
     exit 1
 fi
 
@@ -115,7 +157,7 @@ fi
 execute_docker_compose() {
     local app=$1
     local cmd=$2
-    local compose_file="$HOME/TARS/apps/${app}/docker-compose.yml"
+    local compose_file="$BASE_DIR/apps/${app}/docker-compose.yml"
     
     if [ -f "$compose_file" ]; then
         echo "Managing $app application..."
@@ -133,7 +175,7 @@ execute_docker_compose() {
 # If app_name is 'all'
 if [ "$APP_NAME" = "all" ]; then
     # Loop through all directories in apps
-    for dir in apps/*/; do
+    for dir in "$BASE_DIR"/apps/*/; do
         if [ -d "$dir" ]; then
             app_dir=$(basename "$dir")
             execute_docker_compose "$app_dir" "$COMMAND"
@@ -141,7 +183,7 @@ if [ "$APP_NAME" = "all" ]; then
     done
 else
     # Check if the specified app directory exists
-    if [ ! -d "apps/$APP_NAME" ]; then
+    if [ ! -d "$BASE_DIR/apps/$APP_NAME" ]; then
         echo "Error: App '$APP_NAME' not found in apps directory"
         echo "Use --help to see usage information"
         exit 1
