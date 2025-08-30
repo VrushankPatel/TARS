@@ -1,0 +1,62 @@
+version: "3.7"
+
+x-environment: &env
+  NODE_ENV: "production"
+  DB_HOSTNAME: "immich_postgres_1"
+  DB_USERNAME: &db_username "immich"
+  DB_PASSWORD: &db_password "moneyprintergobrrr"
+  DB_DATABASE_NAME: &db_database_name "immich"
+  REDIS_HOSTNAME: "immich_redis_1"
+  LOG_LEVEL: "log"
+  JWT_SECRET: ${APP_SEED}
+  DISABLE_REVERSE_GEOCODING: "false"
+  REVERSE_GEOCODING_PRECISION: "3"
+  PUBLIC_LOGIN_PAGE_MESSAGE: ""
+  IMMICH_MACHINE_LEARNING_URL: "http://immich_machine-learning_1:3003"
+
+services:
+  app_proxy:
+    environment:
+      APP_HOST: immich_server_1
+      APP_PORT: 2283
+      PROXY_AUTH_ADD: "false"
+
+  server:
+    image: ghcr.io/immich-app/immich-server:v1.139.4@sha256:c3c5eeafa5549e446b5fd71394399178d9c87da1dec5fd9e9a80a5a0f13e9fad
+    volumes:
+      - ${APP_DATA_DIR}/data/upload:/data
+    environment:
+      <<: *env
+    depends_on:
+      - redis
+      - postgres
+    restart: on-failure
+
+  machine-learning:
+    image: ghcr.io/immich-app/immich-machine-learning:v1.139.4@sha256:7eb755fd9989f8554ed8f5332b931caf996826c51498400534c8c78d1c2f226f
+    volumes:
+      - ${APP_DATA_DIR}/data/model-cache:/cache
+    environment:
+      <<: *env
+    restart: on-failure
+
+  redis:
+    image: redis:6.2-alpine@sha256:70a7a5b641117670beae0d80658430853896b5ef269ccf00d1827427e3263fa3
+    user: "1000:1000"
+    restart: on-failure
+    volumes:
+      - ${APP_DATA_DIR}/data/redis:/data
+
+  postgres:
+    image: ghcr.io/immich-app/postgres:14-vectorchord0.3.0-pgvectors0.2.0@sha256:b5e2fcf89f01effa82f1a8c3415a680d5df3d90318f70d05ea7db7170934a659
+    # new postgres image does not work rootless
+    #user: "1000:1000"
+    environment:
+      <<: *env
+      POSTGRES_PASSWORD: *db_password
+      POSTGRES_USER: *db_username
+      POSTGRES_DB: *db_database_name
+      POSTGRES_INITDB_ARGS: '--data-checksums'
+    volumes:
+      - ${APP_DATA_DIR}/data/postgres:/var/lib/postgresql/data
+    restart: on-failure

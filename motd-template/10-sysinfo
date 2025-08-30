@@ -1,0 +1,89 @@
+#!/bin/bash
+#
+# /etc/update-motd.d/10-sysinfo
+# chmod +x /etc/update-motd.d/10-sysinfo
+
+cat <<"EOF"
+  _____                           _             _
+ / ____|                         (_)           | |
+| (___   ___ _   _ _ __ _ __ ___  _ _ __   __ _| |
+ \___ \ / __| | | | '__| '_ ` _ \| | '_ \ / _` | |
+ ____) | (__| |_| | |  | | | | | | | | | | (_| | |
+|_____/ \___|\__,_|_|  |_| |_| |_|_|_| |_|\__,_|_|
+EOF
+
+echo ""
+# Colors
+GREEN="\e[32m"
+YELLOW="\e[33m"
+CYAN="\e[36m"
+RESET="\e[0m"
+
+# Host/User
+HOSTNAME=$(hostname)
+USER=$(whoami)
+
+# System Info
+DISTRO=$(lsb_release -d 2>/dev/null | cut -f2 || echo "Unknown")
+KERNEL=$(uname -r)
+UPTIME=$(uptime -p | sed 's/up //')
+LOCAL_IP=$(hostname -I | awk '{print $1}')
+
+# CPU Usage
+CPU=$(top -bn1 | grep "Cpu(s)" | awk '{print 100 - $8"%"}')
+
+# Memory Usage
+MEM_USED=$(free -m | awk '/Mem:/ {print $3}')
+MEM_TOTAL=$(free -m | awk '/Mem:/ {print $2}')
+MEM_PCT=$(free | awk '/Mem:/ {printf "%.1f", $3/$2 * 100.0}')
+MEM_USED_Gi=$(awk "BEGIN {printf \"%.1f\", $MEM_USED/1024}")
+MEM_TOTAL_Gi=$(awk "BEGIN {printf \"%.1f\", $MEM_TOTAL/1024}")
+
+# Disk Usage
+DISK_USED=$(df -h / | awk 'NR==2 {print $3}')
+DISK_TOTAL=$(df -h / | awk 'NR==2 {print $2}')
+DISK_PCT=$(df -h / | awk 'NR==2 {print $5}' | sed 's/%//')
+
+# Disk Usage Bar
+BAR_WIDTH=30
+FILLED=$(( DISK_PCT * BAR_WIDTH / 100 ))
+EMPTY=$(( BAR_WIDTH - FILLED ))
+BAR=$(printf "%${FILLED}s" | tr ' ' '=')
+BAR="$BAR$(printf "%${EMPTY}s")"
+
+# Logged-in Users
+USERS=$(who | awk '{print $1}' | sort -u | xargs)
+
+# Docker Containers
+DOCKER_CONTAINERS=$(docker ps --format "table {{.Names}}\t{{.Status}}" 2>/dev/null | tail -n +2)
+
+# HEADER
+LINE="=============================================================="
+echo -e "${CYAN}${LINE}${RESET}"
+echo -e "💻 ${GREEN}${HOSTNAME}${RESET}"
+echo -e "${CYAN}${LINE}${RESET}"
+
+# INFO
+printf " Welcome to ${GREEN}%s${RESET}, logged in as ${YELLOW}%s${RESET}\n" "$HOSTNAME" "$USER"
+printf " Distro: %s\n" "$DISTRO"
+printf " Kernel: %s\n" "$KERNEL"
+printf " Uptime: %s\n" "$UPTIME"
+printf " Local IP: %s\n" "$LOCAL_IP"
+printf " CPU Usage: %s\n" "$CPU"
+printf " Memory: %sGi/%sGi (%s%%)\n" "$MEM_USED_Gi" "$MEM_TOTAL_Gi" "$MEM_PCT"
+printf " Disk: %s/%s (%s%%)\n" "$DISK_USED" "$DISK_TOTAL" "$DISK_PCT"
+printf " Disk Usage: [%s] %s%%\n" "$BAR" "$DISK_PCT"
+
+echo " Logged-in Users:"
+[ -n "$USERS" ] && echo "  $USERS" || echo "  None"
+
+echo ""
+echo " Docker Containers:"
+if [ -n "$DOCKER_CONTAINERS" ]; then
+  echo "$DOCKER_CONTAINERS" | while read -r line; do
+    echo "  $line"
+  done
+else
+  echo "  None"
+fi
+echo -e "${CYAN}${LINE}${RESET}"
