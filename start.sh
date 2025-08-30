@@ -79,7 +79,7 @@ execute_app_script() {
     if [ -f "$script_path" ]; then
         echo "Executing $script_path"
         chmod +x "$script_path"
-        cd "$(dirname "$script_path")" && ./$(basename "$script_path")
+        cd "$(dirname "$script_path")" && sudo -u "$SUDO_USER" ./$(basename "$script_path")
     else
         echo "Error: Script not found at $script_path"
         exit 1
