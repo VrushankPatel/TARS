@@ -34,5 +34,4 @@ curl -fsSL https://pkgs.tailscale.com/stable/debian/bookworm.tailscale-keyring.l
 sudo apt-get update
 sudo apt-get install tailscale
 sudo tailscale up
-git clone https://github.com/VrushankPatel/TARS.git $HOME
-
+git clone https://github.com/VrushankPatel/TARS.git $HOME/TARS
