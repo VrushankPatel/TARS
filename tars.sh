@@ -63,14 +63,14 @@ DIRECTORY STRUCTURE:
     The script expects applications to be organized as follows:
     apps/
     ├── app1/
-    │   └── start-app1.sh
+    │   └── docker-compose.yml
     ├── app2/
-    │   └── start-app2.sh
+    │   └── docker-compose.yml
     └── ...
 
 NOTE:
-    - Each application must have a start script named: start-<app_name>.sh
-    - All scripts will be made executable automatically
+    - Each application must have a docker-compose.yml file in its directory
+    - All applications are managed using Docker Compose
 EOF
 }
 
@@ -111,18 +111,21 @@ if [ ! -d "apps" ]; then
     exit 1
 fi
 
-# Function to execute single app script
-execute_app_script() {
+# Function to execute docker compose command
+execute_docker_compose() {
     local app=$1
     local cmd=$2
-    local script_path="apps/${app}/${cmd}-${app}.sh"
+    local compose_file="$HOME/TARS/apps/${app}/docker-compose.yml"
     
-    if [ -f "$script_path" ]; then
-        echo "Executing $script_path"
-        chmod +x "$script_path"
-        cd "$(dirname "$script_path")" && ./$(basename "$script_path")
+    if [ -f "$compose_file" ]; then
+        echo "Managing $app application..."
+        if [ "$cmd" == "start" ]; then
+            docker compose -f "$compose_file" up -d
+        elif [ "$cmd" == "stop" ]; then
+            docker compose -f "$compose_file" down
+        fi
     else
-        echo "Error: Script not found at $script_path"
+        echo "Error: docker-compose.yml not found for $app at $compose_file"
         exit 1
     fi
 }
@@ -133,7 +136,7 @@ if [ "$APP_NAME" = "all" ]; then
     for dir in apps/*/; do
         if [ -d "$dir" ]; then
             app_dir=$(basename "$dir")
-            execute_app_script "$app_dir" "$COMMAND"
+            execute_docker_compose "$app_dir" "$COMMAND"
         fi
     done
 else
@@ -144,6 +147,6 @@ else
         exit 1
     fi
     
-    # Execute specific app script
-    execute_app_script "$APP_NAME" "$COMMAND"
+    # Execute docker compose command for the specific app
+    execute_docker_compose "$APP_NAME" "$COMMAND"
 fi
