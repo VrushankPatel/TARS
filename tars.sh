@@ -235,7 +235,7 @@ ensure_directories() {
     fi
 }
 
-# Function to execute docker compose command
+# Function to execute docker compose command for a single app
 execute_docker_compose() {
     local app=$1
     local cmd=$2
@@ -253,12 +253,6 @@ execute_docker_compose() {
             "stop")
                 docker compose -f "$compose_file" down
                 ;;
-            "restart")
-                echo "Stopping $app..."
-                docker compose -f "$compose_file" down
-                echo "Starting $app..."
-                docker compose -f "$compose_file" up -d
-                ;;
         esac
     else
         echo "Error: docker-compose.yml not found for $app at $compose_file"
@@ -266,23 +260,68 @@ execute_docker_compose() {
     fi
 }
 
-# If app_name is 'all'
-if [ "$APP_NAME" = "all" ]; then
-    # Loop through all directories in apps
+# Function to stop all applications
+stop_all_apps() {
+    echo "Stopping all applications..."
     for dir in "$BASE_DIR"/apps/*/; do
         if [ -d "$dir" ]; then
             app_dir=$(basename "$dir")
-            execute_docker_compose "$app_dir" "$COMMAND"
+            execute_docker_compose "$app_dir" "stop"
         fi
     done
-else
-    # Check if the specified app directory exists
-    if [ ! -d "$BASE_DIR/apps/$APP_NAME" ]; then
-        echo "Error: App '$APP_NAME' not found in apps directory"
-        echo "Use --help to see usage information"
-        exit 1
+}
+
+# Function to start all applications
+start_all_apps() {
+    echo "Starting all applications..."
+    for dir in "$BASE_DIR"/apps/*/; do
+        if [ -d "$dir" ]; then
+            app_dir=$(basename "$dir")
+            execute_docker_compose "$app_dir" "start"
+        fi
+    done
+}
+
+# Handle different commands
+if [ "$COMMAND" = "restart" ]; then
+    if [ "$APP_NAME" = "all" ]; then
+        echo "=== Restarting all applications ==="
+        stop_all_apps
+        echo "Waiting for containers to stop completely..."
+        sleep 2
+        start_all_apps
+    else
+        # Check if the specified app directory exists
+        if [ ! -d "$BASE_DIR/apps/$APP_NAME" ]; then
+            echo "Error: App '$APP_NAME' not found in apps directory"
+            echo "Use --help to see usage information"
+            exit 1
+        fi
+        echo "=== Restarting $APP_NAME ==="
+        execute_docker_compose "$APP_NAME" "stop"
+        echo "Waiting for containers to stop completely..."
+        sleep 2
+        execute_docker_compose "$APP_NAME" "start"
     fi
-    
-    # Execute docker compose command for the specific app
-    execute_docker_compose "$APP_NAME" "$COMMAND"
+else
+    # Handle regular start/stop commands
+    if [ "$APP_NAME" = "all" ]; then
+        # Loop through all directories in apps
+        for dir in "$BASE_DIR"/apps/*/; do
+            if [ -d "$dir" ]; then
+                app_dir=$(basename "$dir")
+                execute_docker_compose "$app_dir" "$COMMAND"
+            fi
+        done
+    else
+        # Check if the specified app directory exists
+        if [ ! -d "$BASE_DIR/apps/$APP_NAME" ]; then
+            echo "Error: App '$APP_NAME' not found in apps directory"
+            echo "Use --help to see usage information"
+            exit 1
+        fi
+        
+        # Execute docker compose command for the specific app
+        execute_docker_compose "$APP_NAME" "$COMMAND"
+    fi
 fi
