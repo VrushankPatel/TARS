@@ -95,7 +95,13 @@ get_target_home() {
     local username="$1"
     if [[ $EUID -eq 0 ]]; then
         # If running as root, get target user's home directory
-        echo "$(eval echo ~$username)"
+        local home_dir=$(getent passwd "$username" | cut -d: -f6)
+        if [[ -n "$home_dir" ]]; then
+            echo "$home_dir"
+        else
+            print_error "Could not determine home directory for user: $username"
+            exit 1
+        fi
     else
         # If running as regular user, use current home
         echo "$HOME"
