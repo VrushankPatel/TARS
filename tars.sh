@@ -31,15 +31,20 @@ AVAILABLE COMMANDS:
     start       Start one or more applications
     stop        Stop one or more applications
     restart     Restart one or more applications (stop followed by start)
+    logs        View logs for a specific application
+    log         Alias for logs command
     --help      Display this help message
 
 Get help for specific commands:
     ./tars.sh start --help     Show help for start command
     ./tars.sh stop --help      Show help for stop command
+    ./tars.sh logs --help      Show help for logs command
 
 EXAMPLES:
     ./tars.sh start immich     Start a specific application
     ./tars.sh start all        Start all applications
+    ./tars.sh logs immich      View logs for a specific application
+    ./tars.sh log n8n          View logs for a specific application
 EOF
 }
 
@@ -150,6 +155,43 @@ NOTE:
 EOF
 }
 
+# Function to print logs help
+print_logs_help() {
+    print_banner
+    cat << "EOF"
+
+LOGS COMMAND
+-----------
+View logs for a TARS application.
+
+USAGE:
+    ./tars.sh logs <app_name | --help>
+    ./tars.sh log <app_name | --help>
+
+OPTIONS:
+    app_name    Name of the application to view logs for (must exist in apps directory)
+    --help      Display this help message
+
+EXAMPLES:
+    ./tars.sh logs immich      View logs for the immich application
+    ./tars.sh log n8n          View logs for the n8n application
+
+DIRECTORY STRUCTURE:
+    The script expects applications to be organized as follows:
+    apps/
+    ├── app1/
+    │   └── docker-compose.yml
+    ├── app2/
+    │   └── docker-compose.yml
+    └── ...
+
+NOTE:
+    - Each application must have a docker-compose.yml file in its directory
+    - Logs are displayed using 'docker compose logs' command
+    - Use Ctrl+C to exit the logs view
+EOF
+}
+
 # Handle help text and command validation
 if [ $# -eq 0 ] || [ "$1" == "--help" ]; then
     print_main_help
@@ -179,9 +221,15 @@ case "$COMMAND" in
             exit 0
         fi
         ;;
+    "logs"|"log")
+        if [ $# -eq 0 ] || [ "$1" == "--help" ]; then
+            print_logs_help
+            exit 0
+        fi
+        ;;
     *)
         echo "Error: Invalid command '$COMMAND'"
-        echo "Valid commands are: start, stop, restart"
+        echo "Valid commands are: start, stop, restart, logs, log"
         echo "Use --help to see usage information"
         exit 1
         ;;
@@ -245,7 +293,9 @@ execute_docker_compose() {
     local compose_file="$BASE_DIR/apps/${app}/docker-compose.yml"
     
     # Ensure required directories exist before starting
-    ensure_directories "$app"
+    if [ "$cmd" = "start" ]; then
+        ensure_directories "$app"
+    fi
     
     if [ -f "$compose_file" ]; then
         echo "Managing $app application..."
@@ -255,6 +305,12 @@ execute_docker_compose() {
                 ;;
             "stop")
                 docker compose -f "$compose_file" down
+                ;;
+            "logs")
+                echo "Viewing logs for $app application..."
+                echo "Press Ctrl+C to exit logs view"
+                echo "----------------------------------------"
+                docker compose -f "$compose_file" logs -f
                 ;;
         esac
     else
@@ -286,7 +342,17 @@ start_all_apps() {
 }
 
 # Handle different commands
-if [ "$COMMAND" = "restart" ]; then
+if [ "$COMMAND" = "logs" ] || [ "$COMMAND" = "log" ]; then
+    # Check if the specified app directory exists
+    if [ ! -d "$BASE_DIR/apps/$APP_NAME" ]; then
+        echo "Error: App '$APP_NAME' not found in apps directory"
+        echo "Use --help to see usage information"
+        exit 1
+    fi
+    
+    # Execute logs command for the specific app
+    execute_docker_compose "$APP_NAME" "logs"
+elif [ "$COMMAND" = "restart" ]; then
     if [ "$APP_NAME" = "all" ]; then
         echo "=== Restarting all applications ==="
         stop_all_apps
