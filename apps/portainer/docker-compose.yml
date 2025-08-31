@@ -1,11 +1,6 @@
 version: "3.7"
 
 services:
-  app_proxy:
-    environment:
-      APP_HOST: portainer_portainer_1
-      APP_PORT: 9000
-
   docker:
     image: docker:27.2.0-dind@sha256:f9f72ad901a78f27be922b2d320bbc263174f12919c1b37e6a01f828fa904565
     privileged: true
