@@ -229,7 +229,10 @@ ensure_directories() {
     fi
     
     if [ "$created_new" = true ]; then
-        echo "Note: New directories were created. Existing directories were left untouched."
+        echo "Note: New directories were created. Setting up permissions..."
+        sudo chown -R 1000:1000 /opt/tars-data/
+        sudo chmod -R 755 /opt/tars-data/
+        echo "Directory permissions have been configured."
     else
         echo "All required directories already exist."
     fi
