@@ -2,7 +2,7 @@ services:
   portainer:
     image: portainer/portainer-ce:lts
     command: --admin-password-file=/default-password
-    restart: on-failure
+    restart: always
     ports:
       - "9000:9000"
     volumes:
