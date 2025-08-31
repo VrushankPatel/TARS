@@ -27,6 +27,8 @@ sudo apt-get update
 # docker install
 sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 sudo docker run hello-world
+brew install lazydocker
+brew install btop
 
 # tailscale install
 curl -fsSL https://pkgs.tailscale.com/stable/debian/bookworm.noarmor.gpg | sudo tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null
@@ -39,4 +41,5 @@ sudo tailscale up
 git clone https://github.com/VrushankPatel/TARS.git $HOME/TARS
 echo "alias shutdown='sudo \$HOME/TARS/tars.sh stop all && sudo shutdown now'" >> ~/.bashrc
 echo "alias reboot='sudo \$HOME/TARS/tars.sh stop all && sudo reboot'" >> ~/.bashrc
+echo "alias btop='btop --force-utf'" >> ~/.bashrc
 ./services/setup-tars-service.sh
