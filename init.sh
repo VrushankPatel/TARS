@@ -42,4 +42,12 @@ git clone https://github.com/VrushankPatel/TARS.git $HOME/TARS
 echo "alias shutdown='sudo \$HOME/TARS/tars.sh stop all && sudo shutdown now'" >> ~/.bashrc
 echo "alias reboot='sudo \$HOME/TARS/tars.sh stop all && sudo reboot'" >> ~/.bashrc
 echo "alias btop='btop --force-utf'" >> ~/.bashrc
-./services/setup-tars-service.sh
+# Double check below one in .bashrc
+echo "export PATH=$PATH:$HOME/TARS" >> ~/.bashrc
+
+cp ./services/tars-containers.service /etc/systemd/system/tars-containers.service
+# OR create one manually and paste the content
+sudo nano /etc/systemd/system/tars-containers.service
+# paste the content
+sudo systemctl daemon-reload
+sudo systemctl enable tars-containers.service
