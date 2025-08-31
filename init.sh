@@ -34,4 +34,9 @@ curl -fsSL https://pkgs.tailscale.com/stable/debian/bookworm.tailscale-keyring.l
 sudo apt-get update
 sudo apt-get install tailscale
 sudo tailscale up
+
+# tars install
 git clone https://github.com/VrushankPatel/TARS.git $HOME/TARS
+echo "alias shutdown='sudo \$HOME/TARS/tars.sh stop all && sudo shutdown now'" >> ~/.bashrc
+echo "alias reboot='sudo \$HOME/TARS/tars.sh stop all && sudo reboot'" >> ~/.bashrc
+./services/setup-tars-service.sh
