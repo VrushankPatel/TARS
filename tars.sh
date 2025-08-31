@@ -257,33 +257,42 @@ ensure_directories() {
         created_new=true
     fi
     
-    # Create app-specific directories based on .env file
-    if [ -f "$BASE_DIR/apps/$app/.env" ]; then
-        # Extract all paths from .env that end in _LOCATION
-        local paths=$(grep "_LOCATION=" "$BASE_DIR/apps/$app/.env" | cut -d= -f2)
+    # # Create app-specific directories based on .env file
+    # if [ -f "$BASE_DIR/apps/$app/.env" ]; then
+    #     # Extract all paths from .env that end in _LOCATION
+    #     local paths=$(grep "_LOCATION=" "$BASE_DIR/apps/$app/.env" | cut -d= -f2)
         
-        for path in $paths; do
-            if [[ $path == /* ]]; then  # Only process absolute paths
-                if [ ! -d "$path" ]; then
-                    echo "Creating new directory: $path"
-                    sudo mkdir -p "$path"
-                    sudo chown $USER:$USER "$path"
-                    created_new=true
-                else
-                    echo "Using existing directory: $path"
-                fi
-            fi
-        done
-    fi
+    #     for path in $paths; do
+    #         if [[ $path == /* ]]; then  # Only process absolute paths
+    #             if [ ! -d "$path" ]; then
+    #                 echo "Creating new directory: $path"
+    #                 sudo mkdir -p "$path"
+                    
+    #                 # Check if this is a PostgreSQL directory
+    #                 if [[ "$path" =~ [Pp]ostgres ]]; then
+    #                     echo "PostgreSQL directory detected: $path - setting special permissions"
+    #                     sudo chown -R 999:999 "$path"
+    #                     sudo chmod 700 "$path"
+    #                 else
+    #                     sudo chown $USER:$USER "$path"
+    #                 fi
+                    
+    #                 created_new=true
+    #             else
+    #                 echo "Using existing directory: $path"
+    #             fi
+    #         fi
+    #     done
+    # fi
     
-    if [ "$created_new" = true ]; then
-        echo "Note: New directories were created. Setting up permissions..."
-        sudo chown -R 1000:1000 /opt/tars-data/
-        sudo chmod -R 755 /opt/tars-data/
-        echo "Directory permissions have been configured."
-    else
-        echo "All required directories already exist."
-    fi
+    # if [ "$created_new" = true ]; then
+    #     echo "Note: New directories were created. Setting up permissions..."
+    #     sudo chown -R 1000:1000 /opt/tars-data/
+    #     sudo chmod -R 755 /opt/tars-data/
+    #     echo "Directory permissions have been configured."
+    # else
+    #     echo "All required directories already exist."
+    # fi
 }
 
 # Function to execute docker compose command for a single app
