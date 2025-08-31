@@ -18,7 +18,7 @@ services:
         --host unix:///data/docker.sock
         --pidfile /data/docker.pid
     volumes:
-      - ${PORTAINER_CONFIG_LOCATION}/entrypoint.sh:/entrypoint.sh
+      - ./entrypoint.sh:/entrypoint.sh
       - ${DOCKER_DATA_LOCATION}:/data
 
   portainer:
@@ -26,6 +26,6 @@ services:
     command: --host unix:///var/run/docker.sock --admin-password-file=/default-password
     restart: on-failure
     volumes:
-      - ${PORTAINER_CONFIG_LOCATION}/default-password:/default-password
+      - ./default-password:/default-password
       - ${PORTAINER_DATA_LOCATION}:/data
       - ${DOCKER_DATA_LOCATION}:/var/run
