@@ -2,7 +2,7 @@ version: "3.7"
 
 services:
   portainer:
-    image: portainer/portainer-ce:2.33.0@sha256:d5b9eba8d4d2f4e952aee6a6fb154e618857a976f734bfcec5a5603b03f45acd
+    image: portainer/portainer-ce:lts
     command: --admin-password-file=/default-password
     restart: on-failure
     ports:
