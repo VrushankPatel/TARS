@@ -6,6 +6,22 @@
 
 > **TARS** is a powerful, unified management tool for your Docker Compose applications. It provides an intuitive command-line interface to start, stop, restart, monitor logs, and check health status of multiple applications with beautiful colored output and smart monitoring capabilities.
 
+## 📋 Table of Contents
+
+- [🚀 Features](#-features)
+- [🏗️ Directory Structure](#️-directory-structure)
+- [⚡ Quick Start](#-quick-start)
+- [🔧 System Setup](#-system-setup)
+- [📚 Command Reference](#-command-reference)
+- [🎨 Color Scheme](#-color-scheme)
+- [📋 Examples](#-examples)
+- [🔧 Requirements](#-requirements)
+- [🚨 Troubleshooting](#-troubleshooting)
+- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
+- [🙏 Acknowledgments](#-acknowledgments)
+- [📞 Support](#-support)
+
 ## ✨ Features
 
 - 🎯 **Unified Management**: Control all your Docker Compose applications from one script
@@ -37,20 +53,151 @@ TARS/
 
 ## 🚀 Quick Start
 
-### 1. Make the script executable
+### 🆕 New Installation
+If you're setting up TARS on a fresh Debian 12.11 Bookworm system:
+
+```bash
+# Clone and run automated setup
+git clone https://github.com/VrushankPatel/TARS.git
+cd TARS
+./init.sh
+```
+
+### 🔧 Existing Installation
+If TARS is already installed:
+
+#### 1. Make the script executable
 ```bash
 chmod +x tars
 ```
 
-### 2. Get help
+#### 2. Get help
 ```bash
 ./tars --help
 ```
 
-### 3. Start your first application
+#### 3. Start your first application
 ```bash
 ./tars start immich
 ```
+
+---
+
+## 🔧 System Setup
+
+### 🆕 Fresh Debian 12.11 Bookworm Installation
+
+The TARS system comes with an **automated setup script** that will install everything you need on a fresh Debian 12.11 Bookworm system.
+
+#### Prerequisites
+- Fresh Debian 12.11 Bookworm installation
+- User with sudo privileges
+- Internet connection
+- At least 2GB RAM and 10GB free disk space
+
+#### 🚀 One-Command Setup
+
+```bash
+# Clone TARS repository
+git clone https://github.com/VrushankPatel/TARS.git
+cd TARS
+
+# Run the automated setup script
+./init.sh
+```
+
+#### ✨ What the Setup Script Does
+
+The `init.sh` script automatically:
+
+1. **🔧 System Preparation**
+   - Updates system packages
+   - Installs essential tools (curl, wget, vim, git, htop, net-tools)
+   - Sets up sudo access for your user
+
+2. **🌐 Network Services**
+   - Installs and configures avahi-daemon for network discovery
+   - Sets up custom MOTD (Message of the Day)
+
+3. **🐳 Docker Installation**
+   - Adds Docker's official repository
+   - Installs Docker Engine with Compose support
+   - Configures user permissions for Docker
+   - Tests Docker installation
+
+4. **🛠️ Additional Tools**
+   - Installs btop (enhanced system monitor)
+   - Installs Tailscale for secure networking
+
+5. **🚀 TARS System Setup**
+   - Clones TARS repository to `~/TARS`
+   - Makes TARS script executable
+   - Sets up bash aliases for shutdown/reboot
+   - Configures systemd service for auto-start
+   - Creates data directory at `/opt/tars-data`
+
+#### 📋 Setup Process
+
+```bash
+# The script will guide you through:
+./init.sh
+
+# 1. System compatibility check
+# 2. User confirmation
+# 3. Automated installation
+# 4. Final setup instructions
+```
+
+#### 🔄 Post-Setup Steps
+
+After running `init.sh`, you'll need to:
+
+1. **Log out and log back in** to activate sudo and Docker group changes
+2. **Connect to Tailscale**: `sudo tailscale up`
+3. **Test TARS**: `cd ~/TARS && ./tars --help`
+4. **Start applications**: `./tars start all`
+
+#### 🎯 System Aliases Added
+
+The setup script automatically adds these useful aliases to your `.bashrc`:
+
+```bash
+shutdown    # Safely stop TARS and shutdown
+reboot      # Safely stop TARS and reboot
+btop        # Enhanced system monitor
+```
+
+#### 🚨 Troubleshooting Setup
+
+If you encounter issues during setup:
+
+```bash
+# Check script syntax
+bash -n init.sh
+
+# Run with verbose output
+bash -x init.sh
+
+# Check system requirements
+lsb_release -a
+docker --version
+```
+
+#### 🔧 Manual Setup (Alternative)
+
+If you prefer manual setup or need to customize the installation:
+
+```bash
+# Install Docker manually
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+
+# Install TARS manually
+git clone https://github.com/VrushankPatel/TARS.git ~/TARS
+chmod +x ~/TARS/tars
+```
+
+---
 
 ## 📚 Command Reference
 
