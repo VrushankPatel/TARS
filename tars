@@ -43,6 +43,7 @@ print_main_help() {
     echo -e "    ${GREEN}logs${NC}        View logs for a specific application"
     echo -e "    ${GREEN}log${NC}         Alias for logs command"
     echo -e "    ${GREEN}health${NC}      Check health status of applications"
+    echo -e "    ${GREEN}show apps${NC}   Show all available applications and their status"
     echo -e "    ${CYAN}--help${NC}      Display this help message"
     echo ""
     echo -e "${WHITE}Get help for specific commands:${NC}"
@@ -58,6 +59,7 @@ print_main_help() {
     echo -e "    ${GREEN}./tars.sh logs immich -c${NC}   View logs with follow mode"
     echo -e "    ${GREEN}./tars.sh health immich${NC}    Check health of a specific application"
     echo -e "    ${GREEN}./tars.sh health all${NC}       Check health of all applications"
+    echo -e "    ${GREEN}./tars.sh show apps${NC}        Show all applications and their status"
 }
 
 print_start_help() {
@@ -236,6 +238,27 @@ print_health_help() {
     echo -e "    - Use ${YELLOW}Ctrl+C${NC} to exit continuous monitoring"
 }
 
+# Function to print show apps help
+print_show_apps_help() {
+    print_banner
+    echo -e "${WHITE}SHOW APPS COMMAND${NC}"
+    echo -e "${BLUE}-----------------${NC}"
+    echo -e "Show all available TARS applications and their current status."
+    echo ""
+    echo -e "${WHITE}USAGE:${NC}"
+    echo -e "    ${GREEN}./tars.sh show apps${NC}"
+    echo ""
+    echo -e "${WHITE}DESCRIPTION:${NC}"
+    echo -e "    Lists all applications found in the apps directory along with their"
+    echo -e "    Docker Compose status (running, stopped, etc.) and container information."
+    echo ""
+    echo -e "${WHITE}OUTPUT:${NC}"
+    echo -e "    ${GREEN}✓ Running${NC}   - Application is running with all containers up"
+    echo -e "    ${YELLOW}⚠ Partial${NC}   - Some containers are running, others are stopped"
+    echo -e "    ${RED}✗ Stopped${NC}   - Application is not running"
+    echo -e "    ${CYAN}? Unknown${NC}   - Status could not be determined"
+}
+
 # Handle help text and command validation
 if [ $# -eq 0 ] || [ "$1" == "--help" ]; then
     print_main_help
@@ -277,9 +300,20 @@ case "$COMMAND" in
             exit 0
         fi
         ;;
+    "show")
+        if [ $# -eq 0 ] || [ "$1" == "--help" ]; then
+            print_show_apps_help
+            exit 0
+        fi
+        if [ "$1" != "apps" ]; then
+            echo -e "${RED}Error: Invalid show command '$1'${NC}"
+            echo -e "Valid show command is: ${GREEN}apps${NC}"
+            exit 1
+        fi
+        ;;
     *)
         echo -e "${RED}Error: Invalid command '$COMMAND'${NC}"
-        echo -e "Valid commands are: ${GREEN}start${NC}, ${GREEN}stop${NC}, ${GREEN}restart${NC}, ${GREEN}logs${NC}, ${GREEN}log${NC}, ${GREEN}health${NC}"
+        echo -e "Valid commands are: ${GREEN}start${NC}, ${GREEN}stop${NC}, ${GREEN}restart${NC}, ${GREEN}logs${NC}, ${GREEN}log${NC}, ${GREEN}health${NC}, ${GREEN}show apps${NC}"
         echo -e "Use ${CYAN}--help${NC} to see usage information"
         exit 1
         ;;
@@ -299,11 +333,25 @@ ensure_directories() {
     local app=$1
     local created_new=false
     
-    # Check if base data directory exists
-    if [ ! -d "/opt/tars-data" ]; then
-        echo "Creating base data directory at /opt/tars-data"
-        sudo mkdir -p /opt/tars-data
-        sudo chown $USER:$USER /opt/tars-data
+    # Check if base data directory exists - use a user-accessible location on macOS
+    local data_dir="/opt/tars-data"
+    
+    # On macOS, try to use a user-accessible directory if /opt is not accessible
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # Try to create in user's home directory instead
+        data_dir="$HOME/tars-data"
+    fi
+    
+    if [ ! -d "$data_dir" ]; then
+        echo "Creating base data directory at $data_dir"
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            # On macOS, create in user directory
+            mkdir -p "$data_dir"
+        else
+            # On Linux, use sudo
+            sudo mkdir -p "$data_dir"
+            sudo chown $USER:$USER "$data_dir"
+        fi
         created_new=true
     fi
     
@@ -337,8 +385,12 @@ ensure_directories() {
     
     # if [ "$created_new" = true ]; then
     #     echo "Note: New directories were created. Setting up permissions..."
-    #     sudo chown -R 1000:1000 /opt/tars-data/
-    #     sudo chmod -R 755 /opt/tars-data/
+    #     if [[ "$OSTYPE" == "darwin"* ]]; then
+    #         chmod -R 755 "$data_dir"
+    #     else
+    #         sudo chown -R 1000:1000 "$data_dir"
+    #         sudo chmod -R 755 "$data_dir"
+    #     fi
     #     echo "Directory permissions have been configured."
     # else
     #     echo "All required directories already exist."
@@ -501,6 +553,71 @@ start_all_apps() {
     done
 }
 
+# Function to show all apps status
+show_all_apps_status() {
+    echo -e "${CYAN}=== TARS Applications Status ===${NC}"
+    echo ""
+    
+    local total_apps=0
+    local running_apps=0
+    local stopped_apps=0
+    local partial_apps=0
+    
+    for dir in "$BASE_DIR"/apps/*/; do
+        if [ -d "$dir" ]; then
+            app_dir=$(basename "$dir")
+            compose_file="$BASE_DIR/apps/$app_dir/docker-compose.yml"
+            
+            if [ -f "$compose_file" ]; then
+                total_apps=$((total_apps + 1))
+                
+                echo -e "${WHITE}📦 $app_dir${NC}"
+                
+                # Get container status
+                local containers_status=$(docker compose -f "$compose_file" ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null)
+                local running_containers=$(echo "$containers_status" | grep -c "Up" || echo "0")
+                local total_containers=$(echo "$containers_status" | grep -v "NAME" | wc -l || echo "0")
+                
+                if [ "$total_containers" -eq 0 ]; then
+                    echo -e "   ${RED}✗ Stopped${NC} - No containers found"
+                    stopped_apps=$((stopped_apps + 1))
+                elif [ "$running_containers" -eq "$total_containers" ] && [ "$total_containers" -gt 0 ]; then
+                    echo -e "   ${GREEN}✓ Running${NC} - $running_containers/$total_containers containers up"
+                    running_apps=$((running_apps + 1))
+                elif [ "$running_containers" -gt 0 ]; then
+                    echo -e "   ${YELLOW}⚠ Partial${NC} - $running_containers/$total_containers containers up"
+                    partial_apps=$((partial_apps + 1))
+                else
+                    echo -e "   ${RED}✗ Stopped${NC} - $running_containers/$total_containers containers up"
+                    stopped_apps=$((stopped_apps + 1))
+                fi
+                
+                # Show container details
+                if [ "$total_containers" -gt 0 ]; then
+                    echo "$containers_status" | while IFS= read -r line; do
+                        if [[ "$line" == *"Up"* ]]; then
+                            echo -e "     ${GREEN}✓${NC} $line"
+                        elif [[ "$line" == *"Exit"* ]]; then
+                            echo -e "     ${RED}✗${NC} $line"
+                        elif [[ "$line" == *"Created"* ]]; then
+                            echo -e "     ${YELLOW}⚠${NC} $line"
+                        else
+                            echo -e "     ${CYAN}?${NC} $line"
+                        fi
+                    done
+                fi
+                echo ""
+            fi
+        fi
+    done
+    
+    echo -e "${BLUE}=== Summary ===${NC}"
+    echo -e "Total Applications: ${WHITE}$total_apps${NC}"
+    echo -e "Running: ${GREEN}$running_apps${NC}"
+    echo -e "Partial: ${YELLOW}$partial_apps${NC}"
+    echo -e "Stopped: ${RED}$stopped_apps${NC}"
+}
+
 # Handle different commands
 if [ "$COMMAND" = "logs" ] || [ "$COMMAND" = "log" ]; then
     # Check if the specified app directory exists
@@ -561,6 +678,8 @@ elif [ "$COMMAND" = "restart" ]; then
         sleep 2
         execute_docker_compose "$APP_NAME" "start"
     fi
+elif [ "$COMMAND" = "show" ] && [ "$1" = "apps" ]; then
+    show_all_apps_status
 else
     # Handle regular start/stop commands
     if [ "$APP_NAME" = "all" ]; then
