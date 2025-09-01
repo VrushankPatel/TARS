@@ -273,7 +273,7 @@ def execute_power_action(action: str) -> str:
         # First, stop all TARS containers gracefully
         print("Stopping all TARS containers...")
         try:
-            tars_stop_result = subprocess.run(['$HOME/TARS/tars', 'stop', 'all'], capture_output=True, text=True, timeout=30)
+            tars_stop_result = subprocess.run("bash $HOME/TARS/tars stop all", shell=True, capture_output=True, text=True, timeout=30)
             if tars_stop_result.returncode == 0:
                 print("TARS containers stopped successfully")
             else:
