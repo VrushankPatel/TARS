@@ -5,7 +5,7 @@ After=docker.service
 
 [Service]
 Type=oneshot
-ExecStart=/bin/bash /home/vrushankpatel/TARS/tars.sh start all
+ExecStart=/bin/bash /home/vrushankpatel/TARS/tars start all
 RemainAfterExit=yes
 
 [Install]

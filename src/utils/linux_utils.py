@@ -273,7 +273,7 @@ def execute_power_action(action: str) -> str:
         # First, stop all TARS containers gracefully
         print("Stopping all TARS containers...")
         try:
-            tars_stop_result = subprocess.run("bash $HOME/TARS/tars stop all", shell=True, capture_output=True, text=True, timeout=30)
+            tars_stop_result = subprocess.run("bash /home/vrushankpatel/TARS/tars stop all", shell=True, capture_output=True, text=True, timeout=30)
             if tars_stop_result.returncode == 0:
                 print("TARS containers stopped successfully")
             else:
@@ -287,9 +287,12 @@ def execute_power_action(action: str) -> str:
         
         if action == "reboot":
             # Schedule reboot in 10 seconds
+            print("initiating reboot")
             subprocess.run(['shutdown', '-r', '+0'], timeout=5)
+            print("System rebooting")
             return "TARS containers stopped. System rebooting in 10 seconds"
         elif action == "shutdown":
+            print("initiating shutdown")
             # Schedule shutdown in 10 seconds
             subprocess.run(['shutdown', '-h', '+0'], timeout=5)
             return "TARS containers stopped. System shutting down in 10 seconds"
