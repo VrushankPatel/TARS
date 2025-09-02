@@ -50,10 +50,31 @@ logs/
 .env
 .env.local
 .env.production
+TARS-UI/.env
+TARS-UI/.env.*
 
 # Docker
 .dockerignore
+**/docker-compose.override.yml
 
 # Temporary files
 *.tmp
 *.temp
+
+# Node/React (TARS-UI)
+TARS-UI/node_modules/
+TARS-UI/.pnpm-store/
+TARS-UI/.turbo/
+TARS-UI/.next/
+TARS-UI/.cache/
+TARS-UI/dist/
+TARS-UI/build/
+TARS-UI/.eslintcache
+TARS-UI/npm-debug.log*
+TARS-UI/yarn-debug.log*
+TARS-UI/yarn-error.log*
+TARS-UI/pnpm-debug.log*
+
+# Generated UI bundle served by backend
+ui/assets/
+ui/*.map

@@ -11,7 +11,7 @@ import logging
 import os
 
 # Import API routers
-from src.api import system, processes, containers, power
+from src.api import system, processes, containers, power, websocket
 
 # Configure logging
 logging.basicConfig(
@@ -35,7 +35,7 @@ app.add_middleware(
     allow_origins=["*"],  # In production, restrict this to specific domains
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization"],
+    allow_headers=["Content-Type", "Authorization", "Upgrade", "Connection"],
 )
 
 # Include API routers
@@ -43,6 +43,7 @@ app.include_router(system.router)
 app.include_router(processes.router)
 app.include_router(containers.router)
 app.include_router(power.router)
+app.include_router(websocket.router)
 
 
 @app.get("/")
